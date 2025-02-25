@@ -134,9 +134,31 @@ class LeanIX:
                 with open(filename,'wb') as survey_run_result:
                     survey_run_result.write(file.content)
 
+    def download_diagrams(self):
+        """
+        Download diagrams as JSON. The diagram xml is part of it ("graphXml")
+        """
+
+        print("Downloading diagrams...")
+
+        # get all diagram metadata incl. IDs
+        getbookmarks_url = self.instance + self.base_path + "/bookmarks"
+        diagram_data = self.access_leanix_api(getbookmarks_url, method="GET", params={'bookmarkType': 'VISUALIZER'}).json()["data"]
+
+        # iterate through diagram data and save every diagram to an individual .json file
+        for diagram in [i["id"] for i in diagram_data]: # 
+            print("Exporting Diagram: " + diagram)
+            diagram_url = getbookmarks_url + "/" + diagram
+            diagram_json_response = self.access_leanix_api(diagram_url, method="GET", params=diagram).json()
+            diagram_filename = self.config['OPTIONAL']['DIAGRAM_FILENAME'].replace("{cdate}", self.get_today_date()).replace("{id}", diagram)
+
+            with open(diagram_filename,'w') as diagram_file:
+                    diagram_file.write(json.dumps(diagram_json_response))
+
 
 ########################################
 leanIX = LeanIX()
 leanIX.connect()
 leanIX.take_snapshot()
 leanIX.download_surveys()
+leanIX.download_diagrams()
